@@ -2,7 +2,7 @@ module ProgramCounter(
     input wire clk,       
     input wire reset,   
     input wire enable,  
-    output reg [7:0] pc
+    output [7:0] pc
 );
 
  // Register to hold the program counter value
