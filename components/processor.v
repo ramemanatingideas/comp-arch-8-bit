@@ -2,32 +2,71 @@ module processor(
     input wire clk,
     input wire reset,
     // Inputs to processor
-    input wire [7:0] pc_addr, // Input for Program Counter address
-    input wire [7:0] rs_data1, // Input data from Register File read data 1
-    input wire [7:0] rs_data2, // Input data from Register File read data 2
-    input wire [1:0] immediate, // Immediate value for ALU operations
-    input wire [1:0] alu_op, // ALU operation code
-    input wire reg_wr_en, // Register File write enable
-    input wire [1:0] rs1_addr, // Address for the first source register
-    input wire [1:0] rs2_addr, // Address for the second source register
-    input wire [1:0] wr_addr, // Address for data to be written to Register File
-    input wire [7:0] wr_data, // Data to be written into the Register File
-    input wire wr, // Memory write enable
-    input wire rd, // Memory read enable
-    input wire [7:0] add, // Address for Data Memory
-    input wire [1:0] regWriteSrc, // Register Write Source
+    input wire [7:0] pc_addr,
     // Outputs from processor
-    output reg [7:0] instruction, // Output instruction fetched from memory
-    output reg [7:0] result, // Output result of ALU operation
-    output reg [7:0] readData1, // Output data from Register File read data 1
-    output reg [7:0] readData2, // Output data from Register File read data 2
-    output reg [7:0] dataOut // Output data from Data Memory
+    output reg[7:0] pc_out_addr,
+    output wire [7:0] inst,
+    output reg [7:0] result,
+    output reg [7:0] readData1,
+    output reg [7:0] readData2,
+    output reg [7:0] dataOut
 );
 
+// Declare a wire to hold the program counter value
+wire [7:0] pc_counter_value;
+
+program_counter PC(
+   clk,
+   reset,
+   enable,
+   .pc(pc_addr),
+   .pc_out_addr(pc_counter_value)
+);
+
+
+always @* begin
+    pc_out_addr = pc_counter_value;
+end
+
+wire [7:0] instruction;
 // Instantiate Instruction Memory
 ins_mem InstructionMemory (
     .pc_addr(pc_addr),
     .inst(instruction)
+);
+
+assign inst = instruction;
+
+assign rs1_addr = instruction[3:2];
+assign rs2_addr = instruction[5:4];
+
+wire op_code;
+assign op_code = instruction[7:6];
+
+wire RegWrite;              // Output RegWrite signal
+wire MemWrite;              // Output MemWrite signal
+wire MemRead;               // Output MemRead signal
+wire ALUSrc;                // Output ALUSrc signal
+
+control_unit CU(
+    .opcode(op_code),
+    .RegWrite(RegWrite),
+    .MemWrite(MemWrite),
+    .MemRead(MemRead),
+    .ALUSrc(ALUSrc)
+);
+
+
+// Instantiate Register File
+register_file RF (
+    .clk(clk),
+    .reset(reset),
+    .rs1_addr(rs1_addr),
+    .rs2_addr(rs2_addr),
+    .wr_addr(wr_addr),
+    .wr_data(mux1Output),
+    .rs1_data(readData1),
+    .rs2_data(readData2)
 );
 
 // Instantiate ALU
@@ -54,18 +93,7 @@ mux1 MUX1 (
     .output(mux1Output)
 );
 
-// Instantiate Register File
-register_file RF (
-    .clk(clk),
-    .reset(reset),
-    .rs1_addr(rs1_addr),
-    .rs2_addr(rs2_addr),
-    .wr_addr(wr_addr),
-    .wr_data(mux1Output), // Write data from MUX1
-    .reg_wr_en(reg_wr_en),
-    .rs1_data(readData1),
-    .rs2_data(readData2)
-);
+
 
 // Instantiate Zero Extension
 zero_extension ZE (
@@ -81,15 +109,6 @@ data_memory DM (
     .rd(rd),
     .add(add),
     .data_out(dataOut)
-);
-
-// Instantiate Control Unit
-control_unit CU (
-    .opcode(instruction[7:6]), // Extract opcode from instruction
-    .RegWrite(result), // Output result of ALU operation
-    .MemWrite(result), // Output result of ALU operation
-    .MemRead(result), // Output result of ALU operation
-    .ALUSrc(result) // Output result of ALU operation
 );
 
 endmodule
