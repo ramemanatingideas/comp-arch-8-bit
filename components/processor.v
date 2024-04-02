@@ -83,4 +83,13 @@ data_memory DM (
     .data_out(dataOut)
 );
 
+// Instantiate Control Unit
+control_unit CU (
+    .opcode(instruction[7:6]), // Extract opcode from instruction
+    .RegWrite(result), // Output result of ALU operation
+    .MemWrite(result), // Output result of ALU operation
+    .MemRead(result), // Output result of ALU operation
+    .ALUSrc(result) // Output result of ALU operation
+);
+
 endmodule
