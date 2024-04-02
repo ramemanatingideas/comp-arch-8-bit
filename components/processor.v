@@ -1,109 +1,89 @@
 module processor(
     input wire clk,
     input wire reset,
-    // Control signals
-    output reg memWrite,
-    output reg [1:0] aluOp,
-    output reg aluSrc,
-    output reg [1:0] regWriteSrc,
-    // Data bus
-    output reg [7:0] dataOut,
-    input wire [7:0] dataIn,
-    // Registers
+    // Inputs to processor
+    input wire [1:0] opcode,
+    input wire [7:0] rs_data1,
+    input wire [7:0] rs_data2,
+    input wire [1:0] immediate,
+    input wire [1:0] alu_op,
+    input wire reg_wr_en,
+    input wire [1:0] rs1_addr,
+    input wire [1:0] rs2_addr,
+    input wire [1:0] wr_addr,
+    input wire [7:0] wr_data,
+    input wire wr,
+    input wire rd,
+    input wire [7:0] add,
+    // Outputs from processor
+    output reg [7:0] result,
     output reg [7:0] readData1,
     output reg [7:0] readData2,
-    input wire [7:0] writeData,
-    // Memory
-    output reg [7:0] memAddress,
-    input wire [7:0] memDataOut,
-    output reg [7:0] memDataIn
+    output reg [7:0] dataOut
 );
 
-// Program Counter
-reg [7:0] pc;
-always @(posedge clk or posedge reset) begin
-    if (reset)
-        pc <= 8'd0; // Set PC to initial value
+// Instantiate modules
+ProgramCounter PC (
+    .clk(clk),
+    .reset(reset),
+    .enable(1), // Assuming PC is always enabled
+    .pc()
+);
+
+alu ALU (
+    .rs_data1(rs_data1),
+    .rs_data2(rs_data2),
+    .immediate(immediate),
+    .alu_op(alu_op),
+    .result(result)
+);
+
+control_unit CU (
+    .opcode(opcode),
+    .RegWrite(RegWrite),
+    .MemWrite(MemWrite),
+    .MemRead(MemRead),
+    .ALUSrc(ALUSrc)
+);
+
+register_file RF (
+    .clk(clk),
+    .reset(reset),
+    .rs1_addr(rs1_addr),
+    .rs2_addr(rs2_addr),
+    .wr_addr(wr_addr),
+    .wr_data(wr_data),
+    .reg_wr_en(reg_wr_en),
+    .rs1_data(readData1),
+    .rs2_data(readData2)
+);
+
+zero_extension ZE (
+    .input_data(immediate),
+    .output_data()
+);
+
+data_memory DM (
+    .clk(clk),
+    .data_in(wr_data),
+    .wr(wr),
+    .rd(rd),
+    .add(add),
+    .data_out(dataOut)
+);
+
+// Connect zero extension module
+assign ZE.output_data = immediate;
+
+// Connect ALU output to data memory address
+always @* begin
+    if (ALUSrc)
+        DM.add = result;
     else
-        pc <= pc + 8'd1; // Increment PC
+        DM.add = add;
 end
 
-// Instruction Memory
-reg [7:0] instruction;
-always @(posedge clk) begin
-    instruction <= /* Read instruction from memory based on PC */;
-end
-
-// Adder
-wire [7:0] nextPc;
-assign nextPc = pc + 8'b1;
-
-// Control Unit
-reg [1:0] controlSignals;
-always @(*) begin
-    // Decode instruction and set control signals
-    case(instruction[7:6])
-        // Case statements to set control signals based on instruction opcode
-    endcase
-end
-
-// Register File
-reg [7:0] registers [7:0]; // 8 registers each of 8 bits
-always @(posedge clk) begin
-    // Read operations
-    readData1 <= registers[ /* Read Register 1 index */ ];
-    readData2 <= registers[ /* Read Register 2 index */ ];
-    // Write operation
-    if ( /* Control signal to enable register write */ )
-        registers[ /* Register index to write */ ] <= writeData;
-end
-
-// Zero Extension
-reg [7:0] zeroExtended;
-assign zeroExtended = /* Zero extend immediate value from instruction */;
-
-// ALU
-reg [7:0] aluResult;
-always @(*) begin
-    // Perform ALU operation based on control signals
-    case(controlSignals)
-        // Case statements to perform ALU operation based on ALU Op
-    endcase
-end
-
-// Data Memory
-reg [7:0] memory [255:0]; // 256 bytes of memory
-always @(posedge clk) begin
-    if (memWrite)
-        memory[memAddress] <= memDataIn;
-    memDataOut <= memory[ /* Read address from ALU result */ ];
-end
-
-// MUX1
-reg [7:0] mux1Output;
-always @(*) begin
-    // Select input for MUX1 based on control signals
-    if (aluSrc)
-        mux1Output <= zeroExtended;
-    else
-        mux1Output <= readData2;
-end
-
-// MUX2
-reg [7:0] mux2Output;
-always @(*) begin
-    // Select input for MUX2 based on control signals
-    if ( /* Control signal to select ALU result */ )
-        mux2Output <= aluResult;
-    else
-        mux2Output <= readData1;
-end
-
-// Output assignments
-assign memWrite = /* Control signal from Control Unit */;
-assign aluOp = /* ALU Op control signal from Control Unit */;
-assign aluSrc = /* ALU Src control signal from Control Unit */;
-assign regWriteSrc = /* Register Write Src control signal from Control Unit */;
-assign dataOut = mux1Output;
+// Connect ALU output to register file write data
+assign wr_data = result;
 
 endmodule
