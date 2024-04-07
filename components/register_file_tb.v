@@ -32,7 +32,7 @@ module tb_register_file;
     // Clock generation
     always #((CLK_PERIOD)/2) clk = ~clk;
 
-    // Initial stimulus
+ // Initial stimulus
     initial begin
         // Initialize inputs
         clk = 0;
@@ -58,15 +58,31 @@ module tb_register_file;
         // Display initial values
         $display("Initial state:");
         $display("rs1_data: %b, rs2_data: %b", rs1_data, rs2_data);
+   
+        // Scenario 1: Write to register and read from the same register
+        wr_addr = 2'b00;  // Writing to register 0
+        wr_data = 8'b10101110;
+        reg_wr_en = 1;
+        #10; // Wait for write operation to complete
+        rs1_addr = 2'b00; // Reading from register 0
+        rs2_addr = 2'b01; // Reading from register 1
+        #10; // Wait for read operation to complete
+        $display("Scenario 1 - Write to register 0 and read from both registers:");
+        $display("rs1_data: %b, rs2_data: %b", rs1_data, rs2_data);
 
-        // Perform some operations (you can modify this section for more tests)
-        // For example, you can toggle inputs, change addresses, etc.
-
-        // Wait for simulation to finish
-        #100;
+        // Scenario 2: Simultaneous read and write operations
+        wr_addr = 2'b01;  // Writing to register 1
+        wr_data = 8'b11001100;
+        reg_wr_en = 1;
+        #10; // Wait for write operation to complete
+        rs1_addr = 2'b10; // Reading from register 2
+        rs2_addr = 2'b01; // Reading from register 1
+        #10; // Wait for read operation to complete
+        $display("Scenario 2 - Simultaneous read from register 2 and register 1 after write to register 1:");
+        $display("rs1_data: %b, rs2_data: %b", rs1_data, rs2_data);
 
         // End simulation
         $finish;
-    end
+end
 
 endmodule
