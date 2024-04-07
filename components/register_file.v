@@ -10,24 +10,32 @@ module register_file (
     output reg [7:0] rs1_data, // Data from the first source register
     output reg [7:0] rs2_data  // Data from the second source register
 );
-
+    
     reg [7:0] registers [0:3]; // Define an array of registers with 4 8-bit registers
 
     // Write data into the register file when reg_wr_en is high
-    always @(posedge clk or posedge reset) begin
+    always @(posedge clk) begin
         if (reset) begin
             // Initialize registers to 0 during reset
-            for (int i = 0; i < 4; i = i + 1) begin
-                registers[i] <= 8'b0;
-            end
+            registers[0] = 0;
+            registers[1] = 0;
+            registers[2] = 0;
+            registers[3] = 0;
         end else if (reg_wr_en) begin
             // Write data into the register specified by wr_addr
             registers[wr_addr] <= wr_data;
+            $display("wr_data %b", wr_data);
         end
     end
 
     // Assign data to the output ports based on the addresses provided
     always @* begin
+        $display("rs1_addr %b", rs1_addr);
+        $display("rs2_addr %b", rs2_addr);
+        $display("register[0] %b", registers[0]);
+        $display("register[1] %b", registers[1]);
+        $display("register[2] %b", registers[2]);
+        $display("register[3] %b", registers[3]);
         // Extract data from the register file based on the rs1_addr
         case (rs1_addr)
             2'b00: rs1_data = registers[0]; // Register $s0
