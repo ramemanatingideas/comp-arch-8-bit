@@ -1,11 +1,10 @@
 `timescale 1ns / 1ps
 module alu_tb;
     // Parameters
-    parameter PERIOD = 10;
+    parameter CLK_PERIOD = 10;
     // Inputs
     reg [7:0] rs_data1_tb;
     reg [7:0] rs_data2_tb;
-    reg [1:0] immediate_tb;
     reg [1:0] alu_op_tb;
     // Outputs
     wire [7:0] result_tb;
@@ -13,15 +12,16 @@ module alu_tb;
     alu uut (
         .rs_data1(rs_data1_tb),
         .rs_data2(rs_data2_tb),
-        .immediate(immediate_tb),
         .alu_op(alu_op_tb),
         .result(result_tb)
     );
     // Clock generation
     reg clk;
-    always begin
-        #PERIOD/2 clk = ~clk;
-    end
+  // Clock generation
+  initial begin
+    clk = 0;              // Initialize clock to 0
+    repeat (CLK_PERIOD/2) #1 clk = ~clk; // Toggle the clock with half the period
+  end
     // Test cases
     initial begin
         // Test case 1: Addition
@@ -40,22 +40,17 @@ module alu_tb;
         alu_op_tb = 2'b10; // SLL
         #100;
         // Test case 4: Bitwise AND
-        // rs_data1_tb = 8'd15;
-        // rs_data2_tb = 8'd10;
-        // alu_op_tb = 2'b11; // AND
-        // #100;
-        // Test case 5: SW operation
-        // rs_data1_tb = 8'd32;
-        // immediate_tb = 2'b10;
-        // alu_op_tb = 2'b10; // SW
-        // #100;
-        // Test case 6: LW operation
-        // rs_data1_tb = 8'd0;
-        // immediate_tb = 2'b11;
-        // alu_op_tb = 2'b11; // LW
-        // #100;
-        $stop;
+         rs_data1_tb = 8'd15;
+         rs_data2_tb = 8'd10;
+         alu_op_tb = 2'b11; // AND
+         #100;
+        $finish;
     end
+    
+    always @(negedge clk) begin
+        $display("Result: %h", result_tb);
+    end
+    
     // Clock driver
-    always #PERIOD/2 clk = ~clk;
+//    always #PERIOD/2 clk = ~clk;
 endmodule
