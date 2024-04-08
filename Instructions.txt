@@ -19,3 +19,5 @@ and s2, s1 // s2->5
 sll s2, s0 // s2->20
 sll s2, s1 // s2-> 128
 and s0, s2 // s0 ->0
+
+working fine
